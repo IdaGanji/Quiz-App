@@ -18,8 +18,3 @@ export default function QuestionTimer({ timeout, onTimeOut }) {
     },[])
     return <progress id="question-time" max={timeout} value={remainingTime}></progress>
 }
-// The problem now is that the timer runs out of time, the onTimeout function is called
-// since this is a callback function that triggers a state-update in the parent component
-// That will be updating the userAnswers state therefore the parent component is rendered again
-// Upon re-rendering a new handleSelectAnswer() is created in the memory and therefore,
-// The useEffect() in line 7 i called because the onTimeOut function has changed so a new timeOut is set
