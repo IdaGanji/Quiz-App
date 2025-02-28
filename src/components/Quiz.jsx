@@ -4,13 +4,31 @@ import Over from '../assets/quiz-complete.png'
 import QuestionTimer from "./QuestionTimer.jsx"
 export default function Quiz() {
     const [userAnswers, setUserAnswers] = useState([])
-    const activeQuestionIndex = userAnswers.length
+    const [answerState, setAnswerState] = useState('');
+    // We added more logic here
+    const activeQuestionIndex = answerState === '' ? userAnswers.length : userAnswers.length - 1;
     const quizIsOver = activeQuestionIndex === QUESTINOS.length
+
     const handleSelectAnswer = useCallback(function handleSelectAnswer(selectedAnswer) {
+        setAnswerState('answered')
         setUserAnswers((prev) => {
             return [...prev, selectedAnswer]
         })
-    }, []);
+        setTimeout(() => {
+            if (selectedAnswer === QUESTINOS[activeQuestionIndex].answers[0]) {
+                setAnswerState('correct');
+            } else {
+                setAnswerState('wrong')
+            }
+            // We add a nested timer that starts when the parent one expired
+            setTimeout(() => {
+                setAnswerState('');
+            },2000)
+        }, 1000)
+        // The activeQuestionIndex should be added as a dependecy because we want the function to be re-created 
+        // When this variable changes!
+    }, [activeQuestionIndex]);
+
     const handleTimerExpire = useCallback(() => {
         handleSelectAnswer(null)
     }, [handleSelectAnswer]); 
@@ -29,17 +47,22 @@ export default function Quiz() {
             <QuestionTimer timeout={10000} onTimeOut={handleTimerExpire} key={activeQuestionIndex}/>
             <h2>{QUESTINOS[activeQuestionIndex].text}</h2>
             <ul id="answers">
-                {shuffledAnswers.map((answer, i) =>
-                (<li key={i} className="answer">
-                    <button onClick={() => handleSelectAnswer(answer)}>{answer}</button>
-                </li>))}
+                {shuffledAnswers.map((answer, i) => {
+                    const isSelected = userAnswers[userAnswers.length - 1] === answer;
+                    let cssClass = '';
+                    if (answerState === 'answered' && isSelected) {
+                        cssClass = 'selected';
+                    }
+                    if ((answerState === 'correct' || answerState === 'wrong') && isSelected) {
+                        cssClass = answerState;
+                    }
+                    return <li key={i} className="answer">
+                    <button className={cssClass} onClick={() => handleSelectAnswer(answer)}>{answer}</button>
+                </li>
+                }
+                )}
             </ul>
         </div>
     </div>);
 }
-// Now the issue is that when we are finised with the first question and go to the next, this component is re-rendered
-// But since the QuestionTimer component will not re-render as it has not changed
-// But since we want the timers to be re-set, we need to make react un-mount and re-mount this component for us
-// Solution::: key-prop
-// All the components in react have a special Key prop 
-// This prop when its value changes -> tells React to destroy the old component and create a new one/ umount and remount the component
+
